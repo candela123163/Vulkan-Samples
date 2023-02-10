@@ -38,6 +38,10 @@ struct SubpassInfo
 
 	uint32_t depth_stencil_resolve_attachment;
 
+	bool disable_shading_rate_attachment;
+	uint32_t shading_rate_attachment;
+	VkExtent2D shading_rate_attachment_texel_size;
+
 	VkResolveModeFlagBits depth_stencil_resolve_mode;
 
 	std::string debug_name;

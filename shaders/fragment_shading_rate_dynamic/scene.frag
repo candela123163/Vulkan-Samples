@@ -68,6 +68,8 @@ void main()
 
 		case 1:        // Phong shading
 		{
+			for(int i=0; i<1000; i++) {
+
 			vec4 tex_value = texture(samplerSphere, vec2(inUV.s, 1.0 - inUV.t));
 			vec3 ambient   = tex_value.rgb;
 			vec3 N         = normalize(inNormal);
@@ -81,6 +83,7 @@ void main()
 			vec3 dy        = dFdy(color.xyz);
 			freq_x         = dot(dx, dx);
 			freq_y         = dot(dy, dy);
+			}
 		}
 		break;
 	}

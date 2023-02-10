@@ -99,9 +99,10 @@ class Subpasses : public vkb::VulkanSample
 		 */
 		enum Type
 		{
-			RenderTechnique,
+			/*RenderTechnique,
 			TransientAttachments,
-			GBufferSize
+			GBufferSize,*/
+			ShadingRate
 		} type;
 
 		/// Used as label by the GUI
@@ -123,18 +124,34 @@ class Subpasses : public vkb::VulkanSample
 	VkImageUsageFlags rt_usage_flags{VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT};
 
 	std::vector<Config> configs = {
-	    {/* config      = */ Config::RenderTechnique,
-	     /* description = */ "Render technique",
-	     /* options     = */ {"Subpasses", "Renderpasses"},
+	    //{/* config      = */ Config::RenderTechnique,
+	    // /* description = */ "Render technique",
+	    // /* options     = */ {"Subpasses", "Renderpasses"},
+	    // /* value       = */ 0},
+	    //{/* config      = */ Config::TransientAttachments,
+	    // /* description = */ "Transient attachments",
+	    // /* options     = */ {"Enabled", "Disabled"},
+	    // /* value       = */ 0},
+	    //{/* config      = */ Config::GBufferSize,
+	    // /* description = */ "G-Buffer size",
+	    // /* options     = */ {"128-bit", "More"},
+	    // /* value       = */ 0},
+	    {/* config      = */ Config::ShadingRate,
+	     /* description = */ "Shading rate",
+	     /* options     = */ {"disable", "enable"},
 	     /* value       = */ 0},
-	    {/* config      = */ Config::TransientAttachments,
-	     /* description = */ "Transient attachments",
-	     /* options     = */ {"Enabled", "Disabled"},
-	     /* value       = */ 0},
-	    {/* config      = */ Config::GBufferSize,
-	     /* description = */ "G-Buffer size",
-	     /* options     = */ {"128-bit", "More"},
-	     /* value       = */ 0}};
+	};
+
+	
+
+public:
+	VkPhysicalDeviceFragmentShadingRatePropertiesKHR    physical_device_fragment_shading_rate_properties{};
+	std::vector<VkPhysicalDeviceFragmentShadingRateKHR> fragment_shading_rates{};
+	
+
+	virtual void request_gpu_features(vkb::PhysicalDevice &gpu) override;
+	vkb::core::Image create_shading_rate_attachment();
+	void         invalidate_shading_rate_attachment();
 };
 
 std::unique_ptr<vkb::VulkanSample> create_subpasses();

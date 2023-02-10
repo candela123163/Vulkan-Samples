@@ -128,6 +128,36 @@ void Subpass::set_depth_stencil_resolve_mode(VkResolveModeFlagBits mode)
 	depth_stencil_resolve_mode = mode;
 }
 
+void Subpass::set_disable_shading_rate_attachment(bool disable_shading_rate)
+{
+	disable_shading_rate_attachment = disable_shading_rate;
+}
+
+const bool& Subpass::get_disable_shading_rate_attachment() const 
+{
+	return disable_shading_rate_attachment;
+}
+
+void Subpass::set_shading_rate_attachment(uint32_t shading_rate)
+{
+	shading_rate_attachment = shading_rate;
+}
+
+const uint32_t& Subpass::get_shading_rate_attachment() const
+{
+	return shading_rate_attachment;
+}
+
+const VkExtent2D &Subpass::get_shading_rate_texel_size() const
+{
+	return shading_rate_texel_size;
+}
+
+void Subpass::set_shading_rate_texel_size(const VkExtent2D &extend)
+{
+	shading_rate_texel_size = extend;
+}
+
 void Subpass::set_sample_count(VkSampleCountFlagBits sample_count)
 {
 	this->sample_count = sample_count;

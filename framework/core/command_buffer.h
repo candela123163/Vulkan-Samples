@@ -202,6 +202,8 @@ class CommandBuffer : public core::VulkanResource<VkCommandBuffer, VK_OBJECT_TYP
 
 	void set_depth_bounds(float min_depth_bounds, float max_depth_bounds);
 
+	void set_attachment_shading_rate_enabled(bool enabled);
+
 	void draw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance);
 
 	void draw_indexed(uint32_t index_count, uint32_t instance_count, uint32_t first_index, int32_t vertex_offset, uint32_t first_instance);

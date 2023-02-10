@@ -259,7 +259,7 @@ GraphicsPipeline::GraphicsPipeline(Device &        device,
 	color_blend_state.blendConstants[2] = 1.0f;
 	color_blend_state.blendConstants[3] = 1.0f;
 
-	std::array<VkDynamicState, 9> dynamic_states{
+	std::array<VkDynamicState, 10> dynamic_states{
 	    VK_DYNAMIC_STATE_VIEWPORT,
 	    VK_DYNAMIC_STATE_SCISSOR,
 	    VK_DYNAMIC_STATE_LINE_WIDTH,
@@ -269,6 +269,7 @@ GraphicsPipeline::GraphicsPipeline(Device &        device,
 	    VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK,
 	    VK_DYNAMIC_STATE_STENCIL_WRITE_MASK,
 	    VK_DYNAMIC_STATE_STENCIL_REFERENCE,
+	    VK_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR,
 	};
 
 	VkPipelineDynamicStateCreateInfo dynamic_state{VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO};

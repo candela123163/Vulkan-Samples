@@ -27,7 +27,7 @@ struct CompareExtent2D
 {
 	bool operator()(const VkExtent2D &lhs, const VkExtent2D &rhs) const
 	{
-		return !(lhs.width == rhs.width && lhs.height == rhs.height) && (lhs.width < rhs.width && lhs.height < rhs.height);
+		return !(lhs.width == rhs.width && lhs.height == rhs.height) && (lhs.width > rhs.width && lhs.height > rhs.height);
 	}
 };
 }        // namespace
@@ -68,7 +68,7 @@ vkb::RenderTarget::RenderTarget(std::vector<core::Image> &&images) :
 	std::transform(this->images.begin(), this->images.end(), std::inserter(unique_extent, unique_extent.end()), get_image_extent);
 
 	// Allow only one extent size for a render target
-	if (unique_extent.size() != 1)
+	if (unique_extent.size() != 1 && unique_extent.size() != 2)
 	{
 		throw VulkanException{VK_ERROR_INITIALIZATION_FAILED, "Extent size is not unique"};
 	}
@@ -107,7 +107,7 @@ vkb::RenderTarget::RenderTarget(std::vector<core::ImageView> &&image_views) :
 	// Constructs a set of unique image extents given a vector of image views;
 	// allow only one extent size for a render target
 	std::transform(views.begin(), views.end(), std::inserter(unique_extent, unique_extent.end()), get_view_extent);
-	if (unique_extent.size() != 1)
+	if (unique_extent.size() != 1 && unique_extent.size() != 2)
 	{
 		throw VulkanException{VK_ERROR_INITIALIZATION_FAILED, "Extent size is not unique"};
 	}

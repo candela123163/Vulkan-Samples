@@ -134,6 +134,18 @@ class Subpass
 
 	void set_depth_stencil_resolve_mode(VkResolveModeFlagBits mode);
 
+	void set_disable_shading_rate_attachment(bool disable_shading_rate);
+
+	const bool &get_disable_shading_rate_attachment() const;
+
+	void set_shading_rate_attachment(uint32_t shading_rate_attachment);
+
+	const VkExtent2D &get_shading_rate_texel_size() const;
+	
+	void set_shading_rate_texel_size(const VkExtent2D &extend);
+
+	const uint32_t &get_shading_rate_attachment() const;
+
 	LightingState &get_lighting_state();
 
 	const std::string &get_debug_name() const;
@@ -253,6 +265,10 @@ class Subpass
 
 	/// Default to no depth stencil resolve attachment
 	uint32_t depth_stencil_resolve_attachment{VK_ATTACHMENT_UNUSED};
+
+	bool disable_shading_rate_attachment{true};
+	uint32_t shading_rate_attachment{VK_ATTACHMENT_UNUSED};
+	VkExtent2D shading_rate_texel_size;
 };
 
 }        // namespace vkb

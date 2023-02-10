@@ -77,6 +77,16 @@ inline void set_pointer_next(VkSubpassDescription2KHR &subpass_description, VkSu
 	subpass_description.pNext                    = &depth_resolve;
 }
 
+inline void set_pointer_next(VkSubpassDescription& subpass_description, VkFragmentShadingRateAttachmentInfoKHR& shading_rate)
+{
+
+}
+
+inline void set_pointer_next(VkSubpassDescription2KHR &subpass_description, VkFragmentShadingRateAttachmentInfoKHR &shading_rate)
+{
+	subpass_description.pNext = &shading_rate;
+}
+
 inline const VkAttachmentReference2KHR *get_depth_resolve_reference(const VkSubpassDescription &subpass_description)
 {
 	// VkSubpassDescription cannot have pNext point to a VkSubpassDescriptionDepthStencilResolveKHR containing a VkAttachmentReference2KHR
@@ -85,15 +95,19 @@ inline const VkAttachmentReference2KHR *get_depth_resolve_reference(const VkSubp
 
 inline const VkAttachmentReference2KHR *get_depth_resolve_reference(const VkSubpassDescription2KHR &subpass_description)
 {
-	auto description_depth_resolve = static_cast<const VkSubpassDescriptionDepthStencilResolveKHR *>(subpass_description.pNext);
+	//auto description_depth_resolve = static_cast<const VkSubpassDescriptionDepthStencilResolveKHR *>(subpass_description.pNext);
 
-	const VkAttachmentReference2KHR *depth_resolve_attachment = nullptr;
-	if (description_depth_resolve)
-	{
-		depth_resolve_attachment = description_depth_resolve->pDepthStencilResolveAttachment;
-	}
+	//const VkAttachmentReference2KHR *depth_resolve_attachment = nullptr;
+	//if (description_depth_resolve)
+	//{
+	//	depth_resolve_attachment = description_depth_resolve->pDepthStencilResolveAttachment;
+	//}
 
-	return depth_resolve_attachment;
+	//return depth_resolve_attachment;
+
+	///// pNext could be point to other extension's struct
+	///// disable it for now
+	return nullptr;
 }
 
 inline VkResult create_vk_renderpass(VkDevice device, VkRenderPassCreateInfo &create_info, VkRenderPass *handle)
@@ -289,6 +303,7 @@ void RenderPass::create_renderpass(const std::vector<Attachment> &attachments, c
 	std::vector<std::vector<T_AttachmentReference>> depth_stencil_attachments{subpass_count};
 	std::vector<std::vector<T_AttachmentReference>> color_resolve_attachments{subpass_count};
 	std::vector<std::vector<T_AttachmentReference>> depth_resolve_attachments{subpass_count};
+	std::vector<std::vector<VkAttachmentReference2>> shading_rate_attachments{subpass_count};
 
 	std::string new_debug_name{};
 	const bool  needs_debug_name = get_debug_name().empty();
@@ -349,11 +364,20 @@ void RenderPass::create_renderpass(const std::vector<Attachment> &attachments, c
 				}
 			}
 		}
+
+		if (!subpass.disable_shading_rate_attachment)
+		{
+			shading_rate_attachments[i].push_back(get_attachment_reference<VkAttachmentReference2>(subpass.shading_rate_attachment, VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR));
+			auto &attachment = attachment_descriptions[subpass.shading_rate_attachment];
+			attachment.initialLayout = attachment.finalLayout = VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR;
+		}
 	}
 
 	std::vector<T_SubpassDescription> subpass_descriptions;
 	subpass_descriptions.reserve(subpass_count);
 	VkSubpassDescriptionDepthStencilResolveKHR depth_resolve{};
+	VkFragmentShadingRateAttachmentInfoKHR     fragment_shading_rate_attachment_info = {};
+
 	for (size_t i = 0; i < subpasses.size(); ++i)
 	{
 		auto &subpass = subpasses[i];
@@ -390,6 +414,15 @@ void RenderPass::create_renderpass(const std::vector<Attachment> &attachments, c
 					attachment_descriptions[reference.attachment].initialLayout = reference.layout;
 				}
 			}
+		}
+
+		// CAUTION: THIS WILL OVERWRITE subpass_description.pNext, FIX IT IN THE FUTURE
+		if (!shading_rate_attachments[i].empty())
+		{
+			fragment_shading_rate_attachment_info.sType                                  = VK_STRUCTURE_TYPE_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR;
+			fragment_shading_rate_attachment_info.pFragmentShadingRateAttachment         = shading_rate_attachments[i].data();
+			fragment_shading_rate_attachment_info.shadingRateAttachmentTexelSize         = subpass.shading_rate_attachment_texel_size;
+			set_pointer_next(subpass_description, fragment_shading_rate_attachment_info);
 		}
 
 		subpass_descriptions.push_back(subpass_description);

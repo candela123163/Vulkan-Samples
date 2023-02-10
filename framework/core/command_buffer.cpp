@@ -374,6 +374,28 @@ void CommandBuffer::set_depth_bounds(float min_depth_bounds, float max_depth_bou
 	vkCmdSetDepthBounds(get_handle(), min_depth_bounds, max_depth_bounds);
 }
 
+void CommandBuffer::set_attachment_shading_rate_enabled(bool enabled)
+{
+	VkExtent2D                         fragment_size = {1, 1};
+	VkFragmentShadingRateCombinerOpKHR combiner_ops[2];
+	// The combiners determine how the different shading rate values for the pipeline, primitives and attachment are combined
+	if (enabled)
+	{
+		// If shading rate from attachment is enabled, we set the combiner, so that the values from the attachment are used
+		// Combiner for pipeline (A) and primitive (B) - Not used in this sample
+		combiner_ops[0] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR;
+		// Combiner for pipeline (A) and attachment (B), replace the pipeline default value (fragment_size) with the fragment sizes stored in the attachment
+		combiner_ops[1] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE_KHR;
+	}
+	else
+	{
+		// If shading rate from attachment is disabled, we keep the value set via the dynamic state
+		combiner_ops[0] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR;
+		combiner_ops[1] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR;
+	}
+	vkCmdSetFragmentShadingRateKHR(get_handle(), &fragment_size, combiner_ops);
+}
+
 void CommandBuffer::draw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance)
 {
 	flush(VK_PIPELINE_BIND_POINT_GRAPHICS);
@@ -668,7 +690,7 @@ void CommandBuffer::flush_descriptor_state(VkPipelineBindPoint pipeline_bind_poi
 							// Can be null for input attachments
 							VkDescriptorImageInfo image_info{};
 							image_info.sampler   = sampler ? sampler->get_handle() : VK_NULL_HANDLE;
-							image_info.imageView = image_view->get_handle();
+							image_info.imageView = image_view ? image_view->get_handle() : VK_NULL_HANDLE;
 
 							if (image_view != nullptr)
 							{
@@ -830,6 +852,9 @@ RenderPass &CommandBuffer::get_render_pass(const vkb::RenderTarget &render_targe
 		subpass_info_it->disable_depth_stencil_attachment = subpass->get_disable_depth_stencil_attachment();
 		subpass_info_it->depth_stencil_resolve_mode       = subpass->get_depth_stencil_resolve_mode();
 		subpass_info_it->depth_stencil_resolve_attachment = subpass->get_depth_stencil_resolve_attachment();
+		subpass_info_it->disable_shading_rate_attachment  = subpass->get_disable_shading_rate_attachment();
+		subpass_info_it->shading_rate_attachment          = subpass->get_shading_rate_attachment();
+		subpass_info_it->shading_rate_attachment_texel_size = subpass->get_shading_rate_texel_size();
 		subpass_info_it->debug_name                       = subpass->get_debug_name();
 
 		++subpass_info_it;

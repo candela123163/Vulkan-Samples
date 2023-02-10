@@ -25,30 +25,39 @@
 #include "rendering/subpasses/geometry_subpass.h"
 #include "rendering/subpasses/lighting_subpass.h"
 #include "scene_graph/node.h"
+#include "common/vk_initializers.h"
 
 Subpasses::Subpasses()
 {
-	auto &config = get_configuration();
+	//auto &config = get_configuration();
 
-	// Good settings
-	config.insert<vkb::IntSetting>(0, configs[Config::RenderTechnique].value, 0);
-	config.insert<vkb::IntSetting>(0, configs[Config::TransientAttachments].value, 0);
-	config.insert<vkb::IntSetting>(0, configs[Config::GBufferSize].value, 0);
+	//// Good settings
+	//config.insert<vkb::IntSetting>(0, configs[Config::RenderTechnique].value, 0);
+	//config.insert<vkb::IntSetting>(0, configs[Config::TransientAttachments].value, 0);
+	//config.insert<vkb::IntSetting>(0, configs[Config::GBufferSize].value, 0);
 
-	// Use two render passes
-	config.insert<vkb::IntSetting>(1, configs[Config::RenderTechnique].value, 1);
-	config.insert<vkb::IntSetting>(1, configs[Config::TransientAttachments].value, 0);
-	config.insert<vkb::IntSetting>(1, configs[Config::GBufferSize].value, 0);
+	//// Use two render passes
+	//config.insert<vkb::IntSetting>(1, configs[Config::RenderTechnique].value, 1);
+	//config.insert<vkb::IntSetting>(1, configs[Config::TransientAttachments].value, 0);
+	//config.insert<vkb::IntSetting>(1, configs[Config::GBufferSize].value, 0);
 
-	// Disable transient attachments
-	config.insert<vkb::IntSetting>(2, configs[Config::RenderTechnique].value, 0);
-	config.insert<vkb::IntSetting>(2, configs[Config::TransientAttachments].value, 1);
-	config.insert<vkb::IntSetting>(2, configs[Config::GBufferSize].value, 0);
+	//// Disable transient attachments
+	//config.insert<vkb::IntSetting>(2, configs[Config::RenderTechnique].value, 0);
+	//config.insert<vkb::IntSetting>(2, configs[Config::TransientAttachments].value, 1);
+	//config.insert<vkb::IntSetting>(2, configs[Config::GBufferSize].value, 0);
 
-	// Increase G-buffer size
-	config.insert<vkb::IntSetting>(3, configs[Config::RenderTechnique].value, 0);
-	config.insert<vkb::IntSetting>(3, configs[Config::TransientAttachments].value, 0);
-	config.insert<vkb::IntSetting>(3, configs[Config::GBufferSize].value, 1);
+	//// Increase G-buffer size
+	//config.insert<vkb::IntSetting>(3, configs[Config::RenderTechnique].value, 0);
+	//config.insert<vkb::IntSetting>(3, configs[Config::TransientAttachments].value, 0);
+	//config.insert<vkb::IntSetting>(3, configs[Config::GBufferSize].value, 1);
+
+
+
+	add_instance_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+	add_device_extension(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+	add_device_extension(VK_KHR_MULTIVIEW_EXTENSION_NAME);
+	add_device_extension(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+	add_device_extension(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
 }
 
 std::unique_ptr<vkb::RenderTarget> Subpasses::create_render_target(vkb::core::Image &&swapchain_image)
@@ -80,6 +89,8 @@ std::unique_ptr<vkb::RenderTarget> Subpasses::create_render_target(vkb::core::Im
 	                              VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | rt_usage_flags,
 	                              VMA_MEMORY_USAGE_GPU_ONLY};
 
+	
+
 	std::vector<vkb::core::Image> images;
 
 	// Attachment 0
@@ -93,6 +104,9 @@ std::unique_ptr<vkb::RenderTarget> Subpasses::create_render_target(vkb::core::Im
 
 	// Attachment 3
 	images.push_back(std::move(normal_image));
+
+	// Attachment 4
+	images.push_back(std::move(create_shading_rate_attachment()));
 
 	return std::make_unique<vkb::RenderTarget>(std::move(images));
 }
@@ -169,68 +183,68 @@ bool Subpasses::prepare(vkb::Platform &platform)
 
 void Subpasses::update(float delta_time)
 {
-	// Check whether the user changed the render technique
-	if (configs[Config::RenderTechnique].value != last_render_technique)
-	{
-		LOGI("Changing render technique");
-		last_render_technique = configs[Config::RenderTechnique].value;
+	//// Check whether the user changed the render technique
+	//if (configs[Config::RenderTechnique].value != last_render_technique)
+	//{
+	//	LOGI("Changing render technique");
+	//	last_render_technique = configs[Config::RenderTechnique].value;
 
-		// Reset frames, their synchronization objects and their command buffers
-		for (auto &frame : get_render_context().get_render_frames())
-		{
-			frame->reset();
-		}
-	}
+	//	// Reset frames, their synchronization objects and their command buffers
+	//	for (auto &frame : get_render_context().get_render_frames())
+	//	{
+	//		frame->reset();
+	//	}
+	//}
 
-	// Check whether the user switched the attachment or the G-buffer option
-	if (configs[Config::TransientAttachments].value != last_transient_attachment ||
-	    configs[Config::GBufferSize].value != last_g_buffer_size)
-	{
-		// If attachment option has changed
-		if (configs[Config::TransientAttachments].value != last_transient_attachment)
-		{
-			rt_usage_flags = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+	//// Check whether the user switched the attachment or the G-buffer option
+	//if (configs[Config::TransientAttachments].value != last_transient_attachment ||
+	//    configs[Config::GBufferSize].value != last_g_buffer_size)
+	//{
+	//	// If attachment option has changed
+	//	if (configs[Config::TransientAttachments].value != last_transient_attachment)
+	//	{
+	//		rt_usage_flags = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
 
-			// If attachment should be transient
-			if (configs[Config::TransientAttachments].value == 0)
-			{
-				rt_usage_flags |= VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
-			}
-			else
-			{
-				LOGI("Creating non transient attachments");
-			}
-			last_transient_attachment = configs[Config::TransientAttachments].value;
-		}
+	//		// If attachment should be transient
+	//		if (configs[Config::TransientAttachments].value == 0)
+	//		{
+	//			rt_usage_flags |= VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
+	//		}
+	//		else
+	//		{
+	//			LOGI("Creating non transient attachments");
+	//		}
+	//		last_transient_attachment = configs[Config::TransientAttachments].value;
+	//	}
 
-		// It G-buffer option has changed
-		if (configs[Config::GBufferSize].value != last_g_buffer_size)
-		{
-			if (configs[Config::GBufferSize].value == 0)
-			{
-				// Use less bits
-				albedo_format = VK_FORMAT_R8G8B8A8_UNORM;                  // 32-bit
-				normal_format = VK_FORMAT_A2B10G10R10_UNORM_PACK32;        // 32-bit
-			}
-			else
-			{
-				// Use more bits
-				albedo_format = VK_FORMAT_R32G32B32A32_SFLOAT;        // 128-bit
-				normal_format = VK_FORMAT_R32G32B32A32_SFLOAT;        // 128-bit
-			}
+	//	// It G-buffer option has changed
+	//	if (configs[Config::GBufferSize].value != last_g_buffer_size)
+	//	{
+	//		if (configs[Config::GBufferSize].value == 0)
+	//		{
+	//			// Use less bits
+	//			albedo_format = VK_FORMAT_R8G8B8A8_UNORM;                  // 32-bit
+	//			normal_format = VK_FORMAT_A2B10G10R10_UNORM_PACK32;        // 32-bit
+	//		}
+	//		else
+	//		{
+	//			// Use more bits
+	//			albedo_format = VK_FORMAT_R32G32B32A32_SFLOAT;        // 128-bit
+	//			normal_format = VK_FORMAT_R32G32B32A32_SFLOAT;        // 128-bit
+	//		}
 
-			last_g_buffer_size = configs[Config::GBufferSize].value;
-		}
+	//		last_g_buffer_size = configs[Config::GBufferSize].value;
+	//	}
 
-		// Reset frames, their synchronization objects and their command buffers
-		for (auto &frame : get_render_context().get_render_frames())
-		{
-			frame->reset();
-		}
+	//	// Reset frames, their synchronization objects and their command buffers
+	//	for (auto &frame : get_render_context().get_render_frames())
+	//	{
+	//		frame->reset();
+	//	}
 
-		LOGI("Recreating render target");
-		render_context->recreate();
-	}
+	//	LOGI("Recreating render target");
+	//	render_context->recreate();
+	//}
 
 	VulkanSample::update(delta_time);
 }
@@ -289,6 +303,9 @@ std::unique_ptr<vkb::RenderPipeline> Subpasses::create_one_renderpass_two_subpas
 
 	// Outputs are depth, albedo, and normal
 	scene_subpass->set_output_attachments({1, 2, 3});
+	scene_subpass->set_disable_shading_rate_attachment(false);
+	scene_subpass->set_shading_rate_attachment(4);
+	scene_subpass->set_shading_rate_texel_size(physical_device_fragment_shading_rate_properties.maxFragmentShadingRateAttachmentTexelSize);
 
 	// Lighting subpass
 	auto lighting_vs      = vkb::ShaderSource{"deferred/lighting.vert"};
@@ -297,6 +314,9 @@ std::unique_ptr<vkb::RenderPipeline> Subpasses::create_one_renderpass_two_subpas
 
 	// Inputs are depth, albedo, and normal from the geometry subpass
 	lighting_subpass->set_input_attachments({1, 2, 3});
+	lighting_subpass->set_disable_shading_rate_attachment(false);
+	lighting_subpass->set_shading_rate_attachment(4);
+	lighting_subpass->set_shading_rate_texel_size(physical_device_fragment_shading_rate_properties.maxFragmentShadingRateAttachmentTexelSize);
 
 	// Create subpasses pipeline
 	std::vector<std::unique_ptr<vkb::Subpass>> subpasses{};
@@ -305,7 +325,9 @@ std::unique_ptr<vkb::RenderPipeline> Subpasses::create_one_renderpass_two_subpas
 
 	auto render_pipeline = std::make_unique<vkb::RenderPipeline>(std::move(subpasses));
 
-	render_pipeline->set_load_store(vkb::gbuffer::get_clear_all_store_swapchain());
+	auto load_op = vkb::gbuffer::get_clear_all_store_swapchain();
+	load_op.push_back({VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_DONT_CARE});
+	render_pipeline->set_load_store(load_op);
 
 	render_pipeline->set_clear_value(vkb::gbuffer::get_clear_value());
 
@@ -357,7 +379,7 @@ std::unique_ptr<vkb::RenderPipeline> Subpasses::create_lighting_renderpass()
 	return lighting_render_pipeline;
 }
 
-void draw_pipeline(vkb::CommandBuffer &command_buffer, vkb::RenderTarget &render_target, vkb::RenderPipeline &render_pipeline, vkb::Gui *gui = nullptr)
+void draw_pipeline(vkb::CommandBuffer &command_buffer, vkb::RenderTarget &render_target, vkb::RenderPipeline &render_pipeline, vkb::Gui *gui = nullptr, bool shading_rate=false)
 {
 	auto &extent = render_target.get_extent();
 
@@ -372,7 +394,11 @@ void draw_pipeline(vkb::CommandBuffer &command_buffer, vkb::RenderTarget &render
 	scissor.extent = extent;
 	command_buffer.set_scissor(0, {scissor});
 
+	command_buffer.set_attachment_shading_rate_enabled(shading_rate);
+
 	render_pipeline.draw(command_buffer, render_target);
+
+	command_buffer.set_attachment_shading_rate_enabled(false);
 
 	if (gui)
 	{
@@ -384,7 +410,7 @@ void draw_pipeline(vkb::CommandBuffer &command_buffer, vkb::RenderTarget &render
 
 void Subpasses::draw_subpasses(vkb::CommandBuffer &command_buffer, vkb::RenderTarget &render_target)
 {
-	draw_pipeline(command_buffer, render_target, *render_pipeline, gui.get());
+	draw_pipeline(command_buffer, render_target, *render_pipeline, gui.get(), configs[Config::ShadingRate].value);
 }
 
 void Subpasses::draw_renderpasses(vkb::CommandBuffer &command_buffer, vkb::RenderTarget &render_target)
@@ -428,19 +454,176 @@ void Subpasses::draw_renderpasses(vkb::CommandBuffer &command_buffer, vkb::Rende
 
 void Subpasses::draw_renderpass(vkb::CommandBuffer &command_buffer, vkb::RenderTarget &render_target)
 {
-	if (configs[Config::RenderTechnique].value == 0)
-	{
-		// Efficient way
-		draw_subpasses(command_buffer, render_target);
-	}
-	else
-	{
-		// Inefficient way
-		draw_renderpasses(command_buffer, render_target);
-	}
+	draw_subpasses(command_buffer, render_target);
+	//if (configs[Config::RenderTechnique].value == 0)
+	//{
+	//	// Efficient way
+	//	draw_subpasses(command_buffer, render_target);
+	//}
+	//else
+	//{
+	//	// Inefficient way
+	//	draw_renderpasses(command_buffer, render_target);
+	//}
 }
 
 std::unique_ptr<vkb::VulkanSample> create_subpasses()
 {
 	return std::make_unique<Subpasses>();
+}
+
+
+void Subpasses::request_gpu_features(vkb::PhysicalDevice &gpu)
+{
+	// Enable the shading rate attachment feature required by this sample
+	// These are passed to device creation via a pNext structure chain
+	auto &requested_extension_features                         = gpu.request_extension_features<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_FEATURES_KHR);
+	requested_extension_features.attachmentFragmentShadingRate = VK_TRUE;
+	requested_extension_features.pipelineFragmentShadingRate   = VK_FALSE;
+	requested_extension_features.primitiveFragmentShadingRate  = VK_FALSE;
+
+	// Enable anisotropic filtering if supported
+	if (gpu.get_features().samplerAnisotropy)
+	{
+		gpu.get_mutable_requested_features().samplerAnisotropy = VK_TRUE;
+	}
+}
+
+vkb::core::Image Subpasses::create_shading_rate_attachment()
+{
+	auto device = &get_device();
+	auto  queue  = device->get_suitable_graphics_queue();
+	auto &extent = get_render_context().get_swapchain().get_extent();
+	auto  width  = extent.width;
+	auto  height = extent.height;
+
+	physical_device_fragment_shading_rate_properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_PROPERTIES_KHR;
+	VkPhysicalDeviceProperties2KHR device_properties{};
+	device_properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+	device_properties.pNext = &physical_device_fragment_shading_rate_properties;
+	vkGetPhysicalDeviceProperties2KHR(get_device().get_gpu().get_handle(), &device_properties);
+
+	// Check if the requested format for the shading rate attachment supports the required flag
+	VkFormat           requested_format = VK_FORMAT_R8_UINT;
+	VkFormatProperties format_properties;
+	vkGetPhysicalDeviceFormatProperties(device->get_gpu().get_handle(), requested_format, &format_properties);
+	if (!(format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR))
+	{
+		throw std::runtime_error("Selected shading rate attachment image format does not support required formate featureflag");
+	}
+
+	// Shading rate image size depends on shading rate texel size
+	// For each texel in the target image, there is a corresponding shading texel size width x height block in the shading rate image
+	VkExtent3D image_extent{};
+	image_extent.width  = static_cast<uint32_t>(ceil(width / (float) physical_device_fragment_shading_rate_properties.maxFragmentShadingRateAttachmentTexelSize.width));
+	image_extent.height = static_cast<uint32_t>(ceil(height / (float) physical_device_fragment_shading_rate_properties.maxFragmentShadingRateAttachmentTexelSize.height));
+	image_extent.depth  = 1;
+
+	auto shading_rate_image = vkb::core::Image(*device,
+	                                           image_extent, VK_FORMAT_R8_UINT, VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
+	
+	// Allocate a buffer that stores the shading rates
+	VkDeviceSize buffer_size = image_extent.width * image_extent.height * sizeof(uint8_t);
+
+	// Fragment sizes are encoded in a single texel as follows:
+	// size(w) = 2^((texel/4) & 3)
+	// size(h)h = 2^(texel & 3)
+
+	// Populate the buffer with lowest possible shading rate pattern (4x4)
+	uint8_t  val                       = (4 >> 1) | (4 << 1);
+	uint8_t *shading_rate_pattern_data = new uint8_t[buffer_size];
+	memset(shading_rate_pattern_data, val, buffer_size);
+
+	// Create a circular pattern from the available list of fragment shadring rates with decreasing sampling rates outwards (max. range, pattern)
+	std::vector<VkPhysicalDeviceFragmentShadingRateKHR> fragment_shading_rates{};
+	uint32_t                                            fragment_shading_rate_count = 0;
+	vkGetPhysicalDeviceFragmentShadingRatesKHR(get_device().get_gpu().get_handle(), &fragment_shading_rate_count, nullptr);
+	if (fragment_shading_rate_count > 0)
+	{
+		fragment_shading_rates.resize(fragment_shading_rate_count);
+		for (VkPhysicalDeviceFragmentShadingRateKHR &fragment_shading_rate : fragment_shading_rates)
+		{
+			// As per spec, the sType member of each shading rate array entry must be set
+			fragment_shading_rate.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_KHR;
+		}
+		vkGetPhysicalDeviceFragmentShadingRatesKHR(get_device().get_gpu().get_handle(), &fragment_shading_rate_count, fragment_shading_rates.data());
+	}
+	// Shading rates returned by vkGetPhysicalDeviceFragmentShadingRatesKHR are ordered from largest to smallest
+	std::map<float, uint8_t> pattern_lookup = {};
+	float                    range          = 25.0f / static_cast<uint32_t>(fragment_shading_rates.size());
+	float                    current_range  = 8.0f;
+	for (size_t i = fragment_shading_rates.size() - 1; i > 0; i--)
+	{
+		uint32_t rate_v               = fragment_shading_rates[i].fragmentSize.width == 1 ? 0 : (fragment_shading_rates[i].fragmentSize.width >> 1);
+		uint32_t rate_h               = fragment_shading_rates[i].fragmentSize.height == 1 ? 0 : (fragment_shading_rates[i].fragmentSize.height << 1);
+		pattern_lookup[current_range] = rate_v | rate_h;
+		current_range += range;
+	}
+
+	uint8_t *ptrData = shading_rate_pattern_data;
+	for (uint32_t y = 0; y < image_extent.height; y++)
+	{
+		for (uint32_t x = 0; x < image_extent.width; x++)
+		{
+			const float deltaX = ((float) image_extent.width / 2.0f - (float) x) / image_extent.width * 100.0f;
+			const float deltaY = ((float) image_extent.height / 2.0f - (float) y) / image_extent.height * 100.0f;
+			const float dist   = std::sqrt(deltaX * deltaX + deltaY * deltaY);
+			for (auto pattern : pattern_lookup)
+			{
+				if (dist < pattern.first)
+				{
+					*ptrData = pattern.second;
+					break;
+				}
+			}
+			ptrData++;
+		}
+	}
+
+	// Move shading rate pattern data to staging buffer
+	std::unique_ptr<vkb::core::Buffer> staging_buffer = std::make_unique<vkb::core::Buffer>(get_device(),
+	                                                                                        buffer_size,
+	                                                                                        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+	                                                                                        VMA_MEMORY_USAGE_CPU_TO_GPU);
+	staging_buffer->update(shading_rate_pattern_data, buffer_size);
+	delete[] shading_rate_pattern_data;
+
+	// Upload the buffer containing the shading rates to the image that'll be used as the shading rate attachment inside our renderpass
+	VkCommandBuffer         copy_cmd          = device->create_command_buffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+	VkImageSubresourceRange subresource_range = {};
+	subresource_range.aspectMask              = VK_IMAGE_ASPECT_COLOR_BIT;
+	subresource_range.levelCount              = 1;
+	subresource_range.layerCount              = 1;
+
+	VkImageMemoryBarrier image_memory_barrier = vkb::initializers::image_memory_barrier();
+	image_memory_barrier.oldLayout            = VK_IMAGE_LAYOUT_UNDEFINED;
+	image_memory_barrier.newLayout            = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	image_memory_barrier.srcAccessMask        = 0;
+	image_memory_barrier.dstAccessMask        = VK_ACCESS_TRANSFER_WRITE_BIT;
+	image_memory_barrier.image                = shading_rate_image.get_handle();
+	image_memory_barrier.subresourceRange     = subresource_range;
+	vkCmdPipelineBarrier(copy_cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &image_memory_barrier);
+
+	VkBufferImageCopy buffer_copy_region           = {};
+	buffer_copy_region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	buffer_copy_region.imageSubresource.layerCount = 1;
+	buffer_copy_region.imageExtent.width           = image_extent.width;
+	buffer_copy_region.imageExtent.height          = image_extent.height;
+	buffer_copy_region.imageExtent.depth           = 1;
+	vkCmdCopyBufferToImage(copy_cmd, staging_buffer->get_handle(), shading_rate_image.get_handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy_region);
+
+	// Transfer image layout to fragment shading rate attachment layout required to access this in the renderpass
+	image_memory_barrier.oldLayout        = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	image_memory_barrier.newLayout        = VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR;
+	image_memory_barrier.srcAccessMask    = VK_ACCESS_TRANSFER_WRITE_BIT;
+	image_memory_barrier.dstAccessMask    = 0;
+	image_memory_barrier.image            = shading_rate_image.get_handle();
+	image_memory_barrier.subresourceRange = subresource_range;
+	vkCmdPipelineBarrier(copy_cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &image_memory_barrier);
+
+	device->flush_command_buffer(copy_cmd, queue.get_handle(), true);
+
+	staging_buffer.reset();
+
+	return shading_rate_image;
 }

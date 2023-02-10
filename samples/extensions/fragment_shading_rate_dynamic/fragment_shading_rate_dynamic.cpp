@@ -574,8 +574,16 @@ void FragmentShadingRateDynamic::build_command_buffers()
 		    glm::vec3(-2.5f, 0.0f, 0.0f),
 		    glm::vec3(0.0f, 0.0f, 0.0f),
 		    glm::vec3(2.5f, 0.0f, 0.0f),
+
+			glm::vec3(-2.5f, 2.5f, 0.0f),
+		    glm::vec3(0.0f, 2.5f, 0.0f),
+		    glm::vec3(2.5f, 2.5f, 0.0f),
+
+			glm::vec3(-2.5f, -2.5f, 0.0f),
+		    glm::vec3(0.0f, -2.5f, 0.0f),
+		    glm::vec3(2.5f, -2.5f, 0.0f),
 		};
-		for (uint32_t j = 0; j < 3; j++)
+		for (uint32_t j = 0; j < 9; j++)
 		{
 			push_const_block.object_type = 1;
 			push_const_block.offset      = glm::vec4(mesh_offsets[j], 0.0f);
